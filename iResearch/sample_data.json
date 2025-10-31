@@ -1,0 +1,62 @@
+[
+  {
+    "company_name": "OpenAI",
+    "website": "https://openai.com",
+    "address": "San Francisco, CA, USA",
+    "team_info": "由Elon Musk等知名企业家创立，专注于人工智能研究",
+    "funding_info": "获得微软100亿美元投资",
+    "product_service": "ChatGPT、GPT系列模型、DALL-E图像生成",
+    "biz_model": "API订阅服务、企业级解决方案",
+    "partners": "微软、苹果、谷歌等科技巨头",
+    "clients": "全球数百万开发者和企业用户",
+    "field": "人工智能",
+    "detail": "全球领先的人工智能研究公司，以GPT系列模型闻名",
+    "source": "https://openai.com/about",
+    "explain": {
+      "大语言模型": "基于Transformer架构的深度学习模型，能够理解和生成人类语言",
+      "生成式AI": "能够创造新内容的AI技术，包括文本、图像、音频等",
+      "API服务": "应用程序编程接口，允许开发者集成AI功能到自己的应用中",
+      "机器学习": "让计算机通过数据学习模式的技术，无需明确编程"
+    }
+  },
+  {
+    "company_name": "Tesla",
+    "website": "https://tesla.com",
+    "address": "Austin, TX, USA",
+    "team_info": "由Elon Musk领导，专注于电动汽车和清洁能源",
+    "funding_info": "市值超过8000亿美元",
+    "product_service": "电动汽车、太阳能板、储能系统、自动驾驶技术",
+    "biz_model": "直销模式、软件订阅服务、能源服务",
+    "partners": "松下、LG化学、宁德时代等电池供应商",
+    "clients": "全球电动汽车消费者",
+    "field": "新能源汽车",
+    "detail": "全球电动汽车领导者，推动汽车行业电动化转型",
+    "source": "https://tesla.com/about",
+    "explain": {
+      "电动汽车": "使用电池驱动的汽车，零排放环保",
+      "自动驾驶": "车辆能够自主驾驶的技术，减少人为操作",
+      "超级充电站": "Tesla建设的快速充电网络",
+      "能源存储": "储存太阳能等可再生能源的技术"
+    }
+  },
+  {
+    "company_name": "字节跳动",
+    "website": "https://bytedance.com",
+    "address": "北京，中国",
+    "team_info": "由张一鸣创立，全球化的互联网科技公司",
+    "funding_info": "估值超过4000亿美元",
+    "product_service": "抖音、TikTok、今日头条、飞书等",
+    "biz_model": "广告收入、直播打赏、电商佣金",
+    "partners": "苹果、谷歌、亚马逊等平台",
+    "clients": "全球数十亿用户",
+    "field": "互联网科技",
+    "detail": "全球领先的短视频和内容平台公司",
+    "source": "https://bytedance.com",
+    "explain": {
+      "短视频": "时长较短的视频内容，通常15秒到几分钟",
+      "算法推荐": "基于用户行为数据推荐个性化内容的技术",
+      "内容创作": "用户生成内容，包括视频、图片、文字等",
+      "社交电商": "结合社交和电商的商业模式"
+    }
+  }
+]

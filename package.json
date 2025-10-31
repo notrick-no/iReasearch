@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "element-plus": "^2.11.5"
+  },
+  "devDependencies": {
+    "unplugin-auto-import": "^20.2.0",
+    "unplugin-vue-components": "^30.0.0"
+  }
+}
