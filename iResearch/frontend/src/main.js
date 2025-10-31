@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import axios from 'axios'
 import App from './App.vue'
+import autoResize from './directives/autoResize'
 import Login from './views/Login.vue'
 import Dashboard from './views/Dashboard.vue'
 import Knowledge from './views/Knowledge.vue'
@@ -40,6 +41,7 @@ const router = createRouter({
 
 // 创建 Vue 应用
 const app = createApp(App)
+app.directive('autoresize', autoResize)
 
 // 配置 Axios
 axios.defaults.baseURL = '/api'
