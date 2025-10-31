@@ -536,6 +536,120 @@ def get_categories_tree():
     finally:
         cursor.close()
 
+
+@app.route('/api/categories/with-concepts', methods=['GET'])
+@auth_required()
+def get_categories_with_concepts():
+    """获取包含概念信息的分类树结构"""
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+    try:
+        # 获取所有分类
+        cursor.execute("SELECT id, name, parent_id FROM category ORDER BY name")
+        categories = cursor.fetchall()
+
+        # 初始化分类字典
+        category_dict = {}
+        root_categories = []
+
+        for cat in categories:
+            category_dict[cat['id']] = {
+                'id': cat['id'],
+                'name': cat['name'],
+                'parent_id': cat['parent_id'],
+                'children': [],
+                'concepts': [],
+                '_memberships': set()
+            }
+
+        # 组织父子关系
+        for cat in category_dict.values():
+            parent_id = cat['parent_id']
+            if parent_id is None:
+                root_categories.append(cat)
+            else:
+                parent = category_dict.get(parent_id)
+                if parent:
+                    parent['children'].append(cat)
+                else:
+                    # 如果父节点不存在（数据异常），作为根节点处理
+                    root_categories.append(cat)
+
+        # 主分类概念
+        cursor.execute("SELECT id, term, category_id FROM concept ORDER BY term")
+        concepts = cursor.fetchall()
+        total_concepts = len(concepts)
+        uncategorized = []
+
+        for concept in concepts:
+            concept_entry = {
+                'id': concept['id'],
+                'term': concept['term'],
+                'is_extra': False
+            }
+            category_id = concept['category_id']
+
+            if category_id and category_id in category_dict:
+                cat = category_dict[category_id]
+                membership_key = f"main-{category_id}-{concept['id']}"
+                if membership_key not in cat['_memberships']:
+                    cat['concepts'].append(concept_entry)
+                    cat['_memberships'].add(membership_key)
+            else:
+                uncategorized.append(concept_entry)
+
+        # 附加分类概念
+        cursor.execute(
+            """
+            SELECT cc.category_id, c.id AS concept_id, c.term
+            FROM category_concept cc
+            JOIN concept c ON cc.concept_id = c.id
+            ORDER BY c.term
+            """
+        )
+        extra_rows = cursor.fetchall()
+
+        for row in extra_rows:
+            cat = category_dict.get(row['category_id'])
+            if not cat:
+                continue
+
+            membership_key = f"extra-{row['category_id']}-{row['concept_id']}"
+            if membership_key in cat['_memberships']:
+                continue
+
+            cat['concepts'].append({
+                'id': row['concept_id'],
+                'term': row['term'],
+                'is_extra': True
+            })
+            cat['_memberships'].add(membership_key)
+
+        # 排序并计算统计
+        root_categories.sort(key=lambda item: item['name'] or '')
+        for cat in category_dict.values():
+            cat['children'].sort(key=lambda item: item['name'] or '')
+            cat['concepts'].sort(key=lambda item: item['term'] or '')
+            cat['primary_count'] = sum(1 for concept in cat['concepts'] if not concept['is_extra'])
+            cat['total_count'] = len(cat['concepts'])
+            cat.pop('_memberships', None)
+
+        uncategorized.sort(key=lambda item: item['term'] or '')
+
+        return jsonify({
+            'tree': root_categories,
+            'uncategorized': uncategorized,
+            'total_concepts': total_concepts
+        })
+
+    except Exception as e:
+        logger.exception("获取分类概念树错误")
+        return jsonify({'error': '获取分类概念树失败'}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
 @app.route('/api/category', methods=['POST'])
 @auth_required('editor')
 def create_category():

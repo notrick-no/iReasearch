@@ -1,61 +1,127 @@
 <template>
-  <div>
-    <!-- 顶部标题和新增按钮 -->
+  <div class="categories-page">
     <div class="header-section">
-      <h2>分类管理</h2>
-      <el-button type="primary" @click="showAddModal = true">
-        新增分类
-      </el-button>
+      <div class="title-group">
+        <h2>分类与概念管理</h2>
+        <el-tag v-if="totalConcepts !== null" size="small" type="info" effect="plain">
+          概念总数：{{ totalConcepts }}
+        </el-tag>
+      </div>
+      <div class="header-actions">
+        <el-button
+          class="refresh-btn"
+          circle
+          :loading="loading"
+          @click="loadData"
+        >
+          <el-icon><Refresh /></el-icon>
+        </el-button>
+        <el-button type="primary" @click="showAddModal = true">
+          新增分类
+        </el-button>
+      </div>
     </div>
-
-    <!-- 分类树 -->
     <el-card>
       <template #header>
-        <h5 class="mb-0">分类树结构</h5>
+        <div class="card-header">
+          <h5 class="mb-0">行业分类与概念</h5>
+          <span class="card-subtitle">点击概念可跳转到编辑页面</span>
+        </div>
       </template>
 
       <div v-if="loading" class="text-center p-4">
-        <el-skeleton :rows="5" animated />
+        <el-skeleton :rows="6" animated />
       </div>
 
-      <div v-else-if="!categoryTree || categoryTree.length === 0" class="empty-text">
-        暂无分类数据
+      <div v-else-if="categoryTree.length === 0" class="empty-text">
+        暂无分类或概念数据
       </div>
 
       <el-tree
         v-else
         :data="categoryTree"
         node-key="id"
-        default-expand-all
-        :props="{ label: 'name', children: 'children' }"
+        :props="treeProps"
+        :expand-on-click-node="false"
+        highlight-current
         class="category-tree"
       >
-        <!-- 自定义节点内容 -->
-        <template #default="{ node, data }">
-          <span class="custom-node">
-            {{ node.label }}
-            <el-button
-              type="primary"
-              link
-              size="small"
-              @click.stop="editCategory(data.id)"
-            >
-              编辑
-            </el-button>
-            <el-button
-              type="danger"
-              link
-              size="small"
-              @click.stop="confirmDeleteCategory(data)"
-            >
-              删除
-            </el-button>
-          </span>
+        <template #default="{ data }">
+          <div
+            class="tree-node"
+            :class="{
+              'tree-node--category': data.type === 'category',
+              'tree-node--concept': data.type === 'concept',
+              'tree-node--virtual': data.type === 'uncategorized'
+            }"
+          >
+            <div class="node-main">
+              <el-icon v-if="data.type === 'category'"><Folder /></el-icon>
+              <el-icon v-else-if="data.type === 'concept'"><Document /></el-icon>
+              <el-icon v-else><Folder /></el-icon>
+
+              <span v-if="data.type !== 'concept'" class="node-label">{{ data.label }}</span>
+              <router-link
+                v-else
+                :to="`/concept/${data.conceptId}/edit`"
+                class="concept-link"
+              >
+                {{ data.label }}
+              </router-link>
+
+              <el-tag
+                v-if="data.type === 'concept' && data.isExtra"
+                size="small"
+                type="info"
+                effect="plain"
+                class="extra-tag"
+              >
+                附加
+              </el-tag>
+
+              <el-tag
+                v-if="data.type === 'category'"
+                size="small"
+                type="success"
+                effect="plain"
+                :title="`主分类概念 ${data.primaryCount} 个`"
+              >
+                共 {{ data.totalCount }} 个概念
+              </el-tag>
+
+              <el-tag
+                v-else-if="data.type === 'uncategorized'"
+                size="small"
+                type="warning"
+                effect="plain"
+              >
+                {{ data.totalCount }} 个概念
+              </el-tag>
+            </div>
+
+            <div v-if="data.type === 'category'" class="node-actions">
+              <el-button
+                type="primary"
+                link
+                size="small"
+                @click.stop="editCategory(data.categoryId)"
+              >
+                编辑
+              </el-button>
+              <el-button
+                type="danger"
+                link
+                size="small"
+                @click.stop="confirmDeleteCategory(data)"
+              >
+                删除
+              </el-button>
+            </div>
+          </div>
         </template>
       </el-tree>
     </el-card>
 
-    <!-- 新增分类对话框 -->
     <el-dialog
       v-model="showAddModal"
       title="新增分类"
@@ -103,43 +169,103 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import axios from 'axios'
+import { Folder, Document, Refresh } from '@element-plus/icons-vue'
+import axiosBase from 'axios'
 
 const router = useRouter()
 
-// 响应式数据
+const axios = inject('$axios', axiosBase)
+
 const categoryTree = ref([])
 const flatCategories = ref([])
 const loading = ref(false)
 const adding = ref(false)
 const showAddModal = ref(false)
+const totalConcepts = ref(0)
 const newCategoryForm = ref({
   name: '',
   parent_id: ''
 })
 
-// 加载数据
+const treeProps = {
+  label: 'label',
+  children: 'children'
+}
+
+const createConceptNode = (concept, categoryId) => ({
+  id: `concept-${concept.id}-${categoryId ?? 'none'}${concept.is_extra ? '-extra' : '-main'}`,
+  label: concept.term,
+  type: 'concept',
+  conceptId: concept.id,
+  isExtra: Boolean(concept.is_extra),
+  categoryId,
+  children: []
+})
+
+const transformCategory = (category) => {
+  const childCategories = (category.children || []).map(transformCategory)
+  const conceptNodes = (category.concepts || []).map((concept) =>
+    createConceptNode(concept, category.id)
+  )
+
+  return {
+    id: `category-${category.id}`,
+    label: category.name,
+    name: category.name,
+    type: 'category',
+    categoryId: category.id,
+    primaryCount: category.primary_count ?? 0,
+    totalCount: category.total_count ?? conceptNodes.length,
+    children: [...childCategories, ...conceptNodes]
+  }
+}
+
+const buildTreeData = (treeResponse) => {
+  if (!treeResponse) {
+    return []
+  }
+
+  const categories = (treeResponse.tree || []).map(transformCategory)
+  const uncategorizedConcepts = treeResponse.uncategorized || []
+
+  if (uncategorizedConcepts.length > 0) {
+    categories.push({
+      id: 'uncategorized',
+      label: '未分类概念',
+      type: 'uncategorized',
+      totalCount: uncategorizedConcepts.length,
+      primaryCount: 0,
+      children: uncategorizedConcepts.map((concept) =>
+        createConceptNode(concept, null)
+      )
+    })
+  }
+
+  return categories
+}
+
 const loadData = async () => {
   loading.value = true
   try {
     const [treeRes, flatRes] = await Promise.all([
-      axios.get('/categories/tree'),
+      axios.get('/categories/with-concepts'),
       axios.get('/categories/flat')
     ])
-    categoryTree.value = treeRes.data.tree || []
+
+    categoryTree.value = buildTreeData(treeRes.data)
+    totalConcepts.value = treeRes.data?.total_concepts ?? 0
     flatCategories.value = flatRes.data.items || []
   } catch (error) {
-    console.error('加载分类数据失败:', error)
-    ElMessage.error('加载分类数据失败')
+    console.error('加载分类和概念数据失败:', error)
+    ElMessage.error(error?.response?.data?.error || '加载分类和概念数据失败')
   } finally {
     loading.value = false
   }
 }
 
-// 新增分类
 const addCategory = async () => {
   const name = newCategoryForm.value.name.trim()
   if (!name) {
@@ -164,24 +290,25 @@ const addCategory = async () => {
   }
 }
 
-// 重置表单
 const resetForm = () => {
   newCategoryForm.value = { name: '', parent_id: '' }
 }
 
-// 编辑分类
 const editCategory = (id) => {
   router.push(`/category/${id}/edit`)
 }
 
-// 删除分类
-const confirmDeleteCategory = (category) => {
+const confirmDeleteCategory = (categoryNode) => {
+  if (!categoryNode?.categoryId) {
+    return
+  }
+
   ElMessageBox.confirm(
-    `确定删除分类 "${category.name}" 吗？此操作不可恢复。`,
+    `确定删除分类 "${categoryNode.name}" 吗？此操作不可恢复。`,
     '删除确认',
     { type: 'warning' }
   )
-    .then(() => deleteCategory(category.id))
+    .then(() => deleteCategory(categoryNode.categoryId))
     .catch(() => {})
 }
 
@@ -196,18 +323,52 @@ const deleteCategory = async (id) => {
   }
 }
 
-// 初始化
 onMounted(() => {
   loadData()
 })
 </script>
 
 <style scoped>
+.categories-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 .header-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.refresh-btn {
+  border: none;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.card-subtitle {
+  color: var(--el-text-color-secondary);
+  font-size: 0.875rem;
 }
 
 .empty-text {
@@ -220,10 +381,60 @@ onMounted(() => {
   margin-top: 10px;
 }
 
-.custom-node {
+.tree-node {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 12px;
+}
+
+.node-main {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex: 1;
+  gap: 8px;
+  min-width: 0;
+}
+
+.node-label {
+  font-weight: 500;
+}
+
+.concept-link {
+  color: var(--el-color-primary);
+  text-decoration: none;
+}
+
+.concept-link:hover {
+  text-decoration: underline;
+}
+
+.extra-tag {
+  margin-left: 4px;
+}
+
+.node-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tree-node--concept .node-actions {
+  display: none;
+}
+
+.tree-node--virtual .node-actions {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .tree-node {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .node-actions {
+    align-self: flex-end;
+  }
 }
 </style>
