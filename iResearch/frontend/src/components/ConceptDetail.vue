@@ -47,23 +47,25 @@
         
         <div class="mb-3">
           <label class="form-label">通俗解释</label>
-          <textarea 
-            class="form-control" 
+          <textarea
+            class="form-control"
             rows="4"
             v-model="form.plain_def"
             :disabled="isViewer"
             placeholder="请输入概念的通俗解释..."
+            v-autoresize
           ></textarea>
         </div>
-        
+
         <div class="mb-3">
           <label class="form-label">案例/例子</label>
-          <textarea 
-            class="form-control" 
+          <textarea
+            class="form-control"
             rows="3"
             v-model="form.examples"
             :disabled="isViewer"
             placeholder="请输入相关的案例或例子..."
+            v-autoresize
           ></textarea>
         </div>
         

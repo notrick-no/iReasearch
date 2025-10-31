@@ -44,31 +44,34 @@
                 
                 <div class="mb-3">
                   <label class="form-label">通俗解释</label>
-                  <textarea 
-                    class="form-control" 
+                  <textarea
+                    class="form-control"
                     rows="4"
                     v-model="form.plain_def"
                     placeholder="请输入概念的通俗解释..."
+                    v-autoresize
                   ></textarea>
                 </div>
                 
                 <div class="mb-3">
                   <label class="form-label">机制原理</label>
-                  <textarea 
-                    class="form-control" 
+                  <textarea
+                    class="form-control"
                     rows="4"
                     v-model="form.mechanism"
                     placeholder="请输入机制的详细原理..."
+                    v-autoresize
                   ></textarea>
                 </div>
                 
                 <div class="mb-3">
                   <label class="form-label">案例/例子</label>
-                  <textarea 
-                    class="form-control" 
+                  <textarea
+                    class="form-control"
                     rows="4"
                     v-model="form.examples"
                     placeholder="请输入相关的案例或例子..."
+                    v-autoresize
                   ></textarea>
                 </div>
                 

@@ -67,14 +67,13 @@
       <!-- 备注 -->
       <h3>📝 备注</h3>
       <textarea
-          v-model="form.notes"
-          rows="1"
-          ref="notesTextarea"
-          class="form-control mb-4"
-          placeholder="可输入长描述..."
-          :disabled="isViewer"
-          @input="autoResize"
-        />
+        v-model="form.notes"
+        rows="1"
+        class="form-control mb-4"
+        placeholder="可输入长描述..."
+        :disabled="isViewer"
+        v-autoresize
+      ></textarea>
 
       <!-- 基本信息 -->
       <h3>🏢 公司信息</h3>
@@ -93,23 +92,23 @@
 
       <!-- 团队与融资 -->
       <h3>👥 团队与融资</h3>
-      <textarea v-model="form.team_info" rows="3" class="form-control mb-3" :disabled="isViewer"></textarea>
-      <textarea v-model="form.funding_info" rows="3" class="form-control mb-4" :disabled="isViewer"></textarea>
+      <textarea v-model="form.team_info" rows="3" class="form-control mb-3" :disabled="isViewer" v-autoresize></textarea>
+      <textarea v-model="form.funding_info" rows="3" class="form-control mb-4" :disabled="isViewer" v-autoresize></textarea>
 
       <!-- 产品与模式 -->
       <h3>💡 产品与模式</h3>
-      <textarea v-model="form.product" rows="3" class="form-control mb-3" :disabled="isViewer"></textarea>
-      <textarea v-model="form.biz_model" rows="3" class="form-control mb-4" :disabled="isViewer"></textarea>
+      <textarea v-model="form.product" rows="3" class="form-control mb-3" :disabled="isViewer" v-autoresize></textarea>
+      <textarea v-model="form.biz_model" rows="3" class="form-control mb-4" :disabled="isViewer" v-autoresize></textarea>
 
       <!-- 技术核心 -->
       <h3>⚙️ 技术核心与差异化</h3>
-      <textarea v-model="form.tech_core" rows="3" class="form-control mb-3" :disabled="isViewer"></textarea>
-      <textarea v-model="form.difference" rows="3" class="form-control mb-4" :disabled="isViewer"></textarea>
+      <textarea v-model="form.tech_core" rows="3" class="form-control mb-3" :disabled="isViewer" v-autoresize></textarea>
+      <textarea v-model="form.difference" rows="3" class="form-control mb-4" :disabled="isViewer" v-autoresize></textarea>
 
       <!-- 合作伙伴 -->
       <h3>🤝 合作与客户</h3>
-      <textarea v-model="form.partners" rows="3" class="form-control mb-3" :disabled="isViewer"></textarea>
-      <textarea v-model="form.clients" rows="3" class="form-control mb-4" :disabled="isViewer"></textarea>
+      <textarea v-model="form.partners" rows="3" class="form-control mb-3" :disabled="isViewer" v-autoresize></textarea>
+      <textarea v-model="form.clients" rows="3" class="form-control mb-4" :disabled="isViewer" v-autoresize></textarea>
 
       <!-- 来源 -->
       <h3>🔗 来源</h3>
@@ -132,7 +131,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, inject,nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -145,6 +144,7 @@ const saving = ref(false)
 const concepts = ref([])
 const newConceptTerm = ref('')
 
+<<<<<<< HEAD
 const notesTextarea = ref(null)
 
 function autoResize() {
@@ -154,6 +154,8 @@ function autoResize() {
   el.style.height = el.scrollHeight + 'px'
 }
 
+=======
+>>>>>>> codex
 const form = reactive({
   name: '', website: '', address: '', field: '',
   team_info: '', funding_info: '',
@@ -177,8 +179,6 @@ async function loadCompany() {
     Object.assign(form, data)
     concepts.value = data.concepts || []
     loading.value = false
-    await nextTick()
-    autoResize()
   } catch {
     toast?.error('加载公司失败')
     router.push('/companies')
