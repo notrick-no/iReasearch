@@ -149,7 +149,6 @@ const notesTextarea = ref(null)
 
 function autoResize() {
   const el = notesTextarea.value
-  console.log(notesTextarea.value)
   if (!el) return
   el.style.height = 'auto'
   el.style.height = el.scrollHeight + 'px'
