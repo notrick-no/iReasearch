@@ -44,17 +44,25 @@
           v-for="c in concepts"
           :key="c.id"
           class="badge bg-primary d-flex align-items-center"
+          style="cursor: pointer"
         >
-          <span class="me-1">{{ c.term }}</span>
+          <router-link
+            :to="`/concept/${c.id}/edit`"
+            class="text-white text-decoration-none me-1"
+            style="flex: 1"
+          >
+            {{ c.term }}
+          </router-link>
           <button
             v-if="!isViewer"
             type="button"
             class="btn-close btn-close-white"
             style="font-size:0.6rem"
-            @click="removeConcept(c.id)"
+            @click.stop="removeConcept(c.id)"
           ></button>
         </span>
       </div>
+
 
       <!-- 备注 -->
       <h3>📝 备注</h3>
