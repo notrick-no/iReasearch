@@ -592,7 +592,7 @@ def get_categories_with_concepts():
 
             if category_id and category_id in category_dict:
                 cat = category_dict[category_id]
-                membership_key = f"main-{concept['id']}"
+                membership_key = f"main-{category_id}-{concept['id']}"
                 if membership_key not in cat['_memberships']:
                     cat['concepts'].append(concept_entry)
                     cat['_memberships'].add(membership_key)
@@ -615,7 +615,7 @@ def get_categories_with_concepts():
             if not cat:
                 continue
 
-            membership_key = f"extra-{row['concept_id']}"
+            membership_key = f"extra-{row['category_id']}-{row['concept_id']}"
             if membership_key in cat['_memberships']:
                 continue
 
@@ -627,15 +627,15 @@ def get_categories_with_concepts():
             cat['_memberships'].add(membership_key)
 
         # 排序并计算统计
-        root_categories.sort(key=lambda item: item['name'])
+        root_categories.sort(key=lambda item: item['name'] or '')
         for cat in category_dict.values():
-            cat['children'].sort(key=lambda item: item['name'])
-            cat['concepts'].sort(key=lambda item: item['term'])
+            cat['children'].sort(key=lambda item: item['name'] or '')
+            cat['concepts'].sort(key=lambda item: item['term'] or '')
             cat['primary_count'] = sum(1 for concept in cat['concepts'] if not concept['is_extra'])
             cat['total_count'] = len(cat['concepts'])
             cat.pop('_memberships', None)
 
-        uncategorized.sort(key=lambda item: item['term'])
+        uncategorized.sort(key=lambda item: item['term'] or '')
 
         return jsonify({
             'tree': root_categories,
@@ -644,10 +644,11 @@ def get_categories_with_concepts():
         })
 
     except Exception as e:
-        logger.error(f"获取分类概念树错误: {e}")
+        logger.exception("获取分类概念树错误")
         return jsonify({'error': '获取分类概念树失败'}), 500
     finally:
         cursor.close()
+        conn.close()
 
 @app.route('/api/category', methods=['POST'])
 @auth_required('editor')

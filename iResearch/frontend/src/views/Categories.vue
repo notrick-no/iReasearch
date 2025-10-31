@@ -169,13 +169,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Folder, Document, Refresh } from '@element-plus/icons-vue'
-import axios from 'axios'
+import axiosBase from 'axios'
 
 const router = useRouter()
+
+const axios = inject('$axios', axiosBase)
 
 const categoryTree = ref([])
 const flatCategories = ref([])
@@ -258,7 +260,7 @@ const loadData = async () => {
     flatCategories.value = flatRes.data.items || []
   } catch (error) {
     console.error('加载分类和概念数据失败:', error)
-    ElMessage.error('加载分类和概念数据失败')
+    ElMessage.error(error?.response?.data?.error || '加载分类和概念数据失败')
   } finally {
     loading.value = false
   }
