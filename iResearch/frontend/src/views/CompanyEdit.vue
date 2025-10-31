@@ -67,12 +67,14 @@
       <!-- 备注 -->
       <h3>📝 备注</h3>
       <textarea
-        v-model="form.notes"
-        rows="4"
-        class="form-control mb-4"
-        placeholder="可输入长描述..."
-        :disabled="isViewer"
-      ></textarea>
+          v-model="form.notes"
+          rows="1"
+          ref="notesTextarea"
+          class="form-control mb-4"
+          placeholder="可输入长描述..."
+          :disabled="isViewer"
+          @input="autoResize"
+        />
 
       <!-- 基本信息 -->
       <h3>🏢 公司信息</h3>
@@ -130,7 +132,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, inject } from 'vue'
+import { ref, reactive, computed, onMounted, inject,nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -142,6 +144,16 @@ const loading = ref(false)
 const saving = ref(false)
 const concepts = ref([])
 const newConceptTerm = ref('')
+
+const notesTextarea = ref(null)
+
+function autoResize() {
+  const el = notesTextarea.value
+  console.log(notesTextarea.value)
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = el.scrollHeight + 'px'
+}
 
 const form = reactive({
   name: '', website: '', address: '', field: '',
@@ -165,6 +177,9 @@ async function loadCompany() {
     const { data } = await axios.get(`/company/${route.params.id}`)
     Object.assign(form, data)
     concepts.value = data.concepts || []
+    loading.value = false
+    await nextTick()
+    autoResize()
   } catch {
     toast?.error('加载公司失败')
     router.push('/companies')
