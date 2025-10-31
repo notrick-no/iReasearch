@@ -23,10 +23,7 @@
             
             <!-- 编辑和管理员可见的菜单 -->
             <li class="nav-item" v-if="isEditorOrAdmin">
-              <router-link class="nav-link" to="/concepts">概念</router-link>
-            </li>
-            <li class="nav-item" v-if="isEditorOrAdmin">
-              <router-link class="nav-link" to="/categories">分类</router-link>
+              <router-link class="nav-link" to="/categories">行业概念</router-link>
             </li>
             
             <li class="nav-item">

@@ -8,7 +8,6 @@ import Dashboard from './views/Dashboard.vue'
 import Knowledge from './views/Knowledge.vue'
 import Companies from './views/Companies.vue'
 import CompanyEdit from './views/CompanyEdit.vue'
-import Concepts from './views/Concepts.vue'
 import ConceptEdit from './views/ConceptEdit.vue'
 import Categories from './views/Categories.vue'
 import CategoryEdit from './views/CategoryEdit.vue'
@@ -24,7 +23,6 @@ const routes = [
   { path: '/companies', name: 'Companies', component: Companies, meta: { requiresAuth: true } },
   { path: '/company/new', name: 'CompanyNew', component: CompanyEdit, meta: { requiresAuth: true, requiresRole: 'editor' } },
   { path: '/company/:id/edit', name: 'CompanyEdit', component: CompanyEdit, meta: { requiresAuth: true, requiresRole: 'editor' } },
-  { path: '/concepts', name: 'Concepts', component: Concepts, meta: { requiresAuth: true, requiresRole: 'editor' } },
   { path: '/concept/new', name: 'ConceptNew', component: ConceptEdit, meta: { requiresAuth: true, requiresRole: 'editor' } },
   { path: '/concept/:id/edit', name: 'ConceptEdit', component: ConceptEdit, meta: { requiresAuth: true, requiresRole: 'editor' } },
   { path: '/categories', name: 'Categories', component: Categories, meta: { requiresAuth: true, requiresRole: 'editor' } },
