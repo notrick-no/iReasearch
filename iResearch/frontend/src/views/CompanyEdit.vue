@@ -144,7 +144,6 @@ const saving = ref(false)
 const concepts = ref([])
 const newConceptTerm = ref('')
 
-<<<<<<< HEAD
 const notesTextarea = ref(null)
 
 function autoResize() {
@@ -154,8 +153,7 @@ function autoResize() {
   el.style.height = el.scrollHeight + 'px'
 }
 
-=======
->>>>>>> codex
+
 const form = reactive({
   name: '', website: '', address: '', field: '',
   team_info: '', funding_info: '',
