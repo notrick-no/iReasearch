@@ -1,395 +1,304 @@
 <template>
-  <div>
+  <div class="container py-3" style="max-width: 900px;">
+    <!-- 顶部 -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2>{{ isEdit ? '编辑概念' : '新建概念' }}</h2>
+      <h2 class="fw-bold">{{ isEdit ? '编辑概念' : '新增概念' }}</h2>
       <div>
-        <router-link to="/concepts" class="btn btn-outline-secondary me-2">
-          返回列表
-        </router-link>
-        <button 
-          v-if="isEdit" 
-          class="btn btn-outline-danger"
-          @click="confirmDelete"
+        <RouterLink to="/concepts" class="btn btn-outline-secondary me-2">返回</RouterLink>
+        <el-button v-if="isEdit" type="danger" plain @click="confirmDelete">删除概念</el-button>
+      </div>
+    </div>
+
+    <!-- 加载中 -->
+    <div v-if="loading" class="text-center py-5">
+      <el-icon class="is-loading" style="font-size:24px;"><loading /></el-icon>
+    </div>
+
+    <!-- 编辑内容（markdown风格，纵向排布） -->
+    <form v-else class="markdown-style" @submit.prevent>
+      <!-- 基本信息 -->
+      <h3>概念术语</h3>
+      <el-input v-model="form.term" placeholder="请输入概念术语" />
+
+            <!-- 图片（即时预览 + 上传） -->
+            <h3>概念图片</h3>
+      <div class="mb-3">
+        <img
+          v-if="imagePreviewSrc"
+          :src="imagePreviewSrc"
+          :alt="form.term"
+          class="img-fluid rounded"
+          style="max-width:100%;height:auto;"
+        />
+        <div v-else class="text-muted">暂无图片</div>
+      </div>
+      <div class="d-flex gap-2">
+        <el-upload
+          :auto-upload="false"
+          :show-file-list="false"
+          accept="image/*"
+          :on-change="onPickImage"
         >
-          删除概念
-        </button>
+          <el-button type="primary" :loading="uploading">选择图片</el-button>
+        </el-upload>
+        <el-button
+          type="success"
+          :disabled="!pickedFile || !isEdit"
+          :loading="uploading"
+          @click="uploadImage"
+        >
+          上传并保存
+        </el-button>
+        <span v-if="!isEdit" class="text-muted">（请先保存概念再上传图片）</span>
       </div>
-    </div>
-    
-    <div v-if="loading" class="text-center p-4">
-      <div class="spinner-border" role="status">
-        <span class="visually-hidden">加载中...</span>
+
+      <h3>通俗解释</h3>
+      <el-input
+        v-model="form.plain_def"
+        type="textarea"
+        :autosize="{ minRows: 1 }"
+        placeholder="请输入通俗解释…"
+      />
+
+      <h3>案例/例子</h3>
+      <el-input
+        v-model="form.examples"
+        type="textarea"
+        :autosize="{ minRows: 1 }"
+        placeholder="请输入案例或例子…"
+      />
+
+      <h3>主分类</h3>
+      <el-select v-model="form.category_id" placeholder="未分类" clearable filterable style="max-width: 360px;">
+        <el-option :value="null" label="未分类" />
+        <el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" />
+      </el-select>
+
+      <h3> 附加分类</h3>
+      <div class="d-flex gap-2 mb-2" style="max-width: 560px;">
+        <el-select v-model="newExtraCategoryId" placeholder="选择分类" clearable filterable class="flex-fill">
+          <el-option
+            v-for="c in availableCategories"
+            :key="c.id"
+            :label="c.name"
+            :value="c.id"
+          />
+        </el-select>
+        <el-button type="primary" plain :disabled="!newExtraCategoryId" @click="addExtraCategory">添加</el-button>
       </div>
-    </div>
-    
-    <div v-else>
-      <form @submit.prevent="saveConcept">
-        <div class="row">
-          <!-- 基本信息 -->
-          <div class="col-md-8">
-            <div class="card mb-4">
-              <div class="card-header">
-                <h5 class="mb-0">基本信息</h5>
-              </div>
-              <div class="card-body">
-                <div class="mb-3">
-                  <label class="form-label">概念术语 <span class="text-danger">*</span></label>
-                  <input 
-                    type="text" 
-                    class="form-control" 
-                    v-model="form.term"
-                    required
-                  >
-                </div>
-                
-                <div class="mb-3">
-                  <label class="form-label">通俗解释</label>
-                  <textarea
-                    class="form-control"
-                    rows="4"
-                    v-model="form.plain_def"
-                    placeholder="请输入概念的通俗解释..."
-                    v-autoresize
-                  ></textarea>
-                </div>
-                
-                <div class="mb-3">
-                  <label class="form-label">机制原理</label>
-                  <textarea
-                    class="form-control"
-                    rows="4"
-                    v-model="form.mechanism"
-                    placeholder="请输入机制的详细原理..."
-                    v-autoresize
-                  ></textarea>
-                </div>
-                
-                <div class="mb-3">
-                  <label class="form-label">案例/例子</label>
-                  <textarea
-                    class="form-control"
-                    rows="4"
-                    v-model="form.examples"
-                    placeholder="请输入相关的案例或例子..."
-                    v-autoresize
-                  ></textarea>
-                </div>
-                
-                <div class="mb-3">
-                  <label class="form-label">主分类</label>
-                  <select class="form-select" v-model="form.category_id">
-                    <option value="">未分类</option>
-                    <option v-for="category in categories" :key="category.id" :value="category.id">
-                      {{ category.name }}
-                    </option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- 图片和附加分类 -->
-          <div class="col-md-4">
-            <!-- 概念图片 -->
-            <div class="card mb-4">
-              <div class="card-header">
-                <h5 class="mb-0">概念图片</h5>
-              </div>
-              <div class="card-body">
-                <div v-if="concept?.image_path" class="mb-3">
-                  <img 
-                    :src="`/uploads/${concept.image_path.split('/').pop()}`" 
-                    class="img-fluid rounded"
-                    :alt="form.term"
-                  >
-                </div>
-                
-                <div v-else class="text-muted text-center mb-3">
-                  暂无图片
-                </div>
-                
-                <div class="d-grid">
-                  <input 
-                    type="file" 
-                    class="form-control" 
-                    accept="image/*"
-                    @change="uploadImage"
-                    ref="imageInput"
-                  >
-                </div>
-              </div>
-            </div>
-            
-            <!-- 附加分类 -->
-            <div class="card mb-4">
-              <div class="card-header">
-                <h5 class="mb-0">附加分类</h5>
-              </div>
-              <div class="card-body">
-                <div class="mb-3">
-                  <div class="input-group">
-                    <select class="form-select" v-model="newExtraCategoryId">
-                      <option value="">选择分类</option>
-                      <option 
-                        v-for="category in availableCategories" 
-                        :key="category.id" 
-                        :value="category.id"
-                      >
-                        {{ category.name }}
-                      </option>
-                    </select>
-                    <button 
-                      class="btn btn-outline-primary" 
-                      type="button"
-                      @click="addExtraCategory"
-                      :disabled="!newExtraCategoryId"
-                    >
-                      添加
-                    </button>
-                  </div>
-                </div>
-                
-                <div v-if="extraCategories.length === 0" class="text-muted">
-                  暂无附加分类
-                </div>
-                
-                <div v-else>
-                  <div 
-                    v-for="category in extraCategories" 
-                    :key="category.id"
-                    class="d-flex justify-content-between align-items-center mb-2"
-                  >
-                    <span class="badge bg-secondary">{{ category.name }}</span>
-                    <button 
-                      type="button" 
-                      class="btn btn-sm btn-outline-danger"
-                      @click="removeExtraCategory(category.id)"
-                    >
-                      <i class="bi bi-x"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 保存按钮 -->
-        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-          <button type="submit" class="btn btn-primary" :disabled="saving">
-            <span v-if="saving" class="spinner-border spinner-border-sm me-2"></span>
-            {{ saving ? '保存中...' : '保存' }}
-          </button>
-        </div>
-      </form>
-    </div>
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <el-tag
+          v-for="c in extraCategories"
+          :key="c.id"
+          closable
+          @close="removeExtraCategory(c.id)"
+        >{{ c.name }}</el-tag>
+        <span v-if="extraCategories.length===0" class="text-muted">暂无附加分类</span>
+      </div>
+
+
+
+      <!-- 底部操作 -->
+      <div class="text-end mt-4">
+        <el-button type="primary" :loading="saving" @click="saveConcept">
+          {{ saving ? '保存中…' : '保存' }}
+        </el-button>
+      </div>
+    </form>
   </div>
 </template>
 
-<script>
-export default {
-  name: 'ConceptEdit',
-  data() {
-    return {
-      concept: null,
-      categories: [],
-      extraCategories: [],
-      loading: false,
-      saving: false,
-      uploading: false,
-      newExtraCategoryId: '',
-      form: {
-        term: '',
-        plain_def: '',
-        mechanism: '',
-        examples: '',
-        category_id: null
-      }
+<script setup>
+import { ref, reactive, computed, onMounted, inject } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { Loading } from '@element-plus/icons-vue'
+
+const route = useRoute()
+const router = useRouter()
+const axios = inject('$axios')
+const toast = inject('$toast')
+
+const loading = ref(false)
+const saving = ref(false)
+const uploading = ref(false)
+
+const concept = ref(null)
+const categories = ref([])
+const extraCategories = ref([])
+const newExtraCategoryId = ref('')
+
+const form = reactive({
+  term: '',
+  plain_def: '',
+  mechanism: '',
+  examples: '',
+  category_id: null
+})
+
+const isEdit = computed(() => !!route.params.id)
+
+// —— 图片预览：优先显示本地预览；无则显示服务器图片；都没有则空
+const pickedFile = ref(null)                  // File
+const pickedPreviewUrl = ref('')              // createObjectURL
+const serverImageSrc = computed(() =>
+  concept.value?.image_path
+    ? `/uploads/${concept.value.image_path.split('/').pop()}`
+    : ''
+)
+const imagePreviewSrc = computed(() => pickedPreviewUrl.value || serverImageSrc.value)
+
+const availableCategories = computed(() => {
+  const mainId = form.category_id
+  const extraIds = extraCategories.value.map(c => c.id)
+  return categories.value.filter(c => c.id !== mainId && !extraIds.includes(c.id))
+})
+
+onMounted(async () => {
+  await loadCategories()
+  if (isEdit.value) await loadConcept()
+})
+
+async function loadCategories() {
+  try {
+    const { data } = await axios.get('/categories/flat')
+    categories.value = data.items || []
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+async function loadConcept() {
+  loading.value = true
+  try {
+    const { data } = await axios.get(`/concept/${route.params.id}`)
+    concept.value = data
+    extraCategories.value = data.extra_categories || []
+    Object.assign(form, {
+      term: data.term || '',
+      plain_def: data.plain_def || '',
+      mechanism: data.mechanism || '',
+      examples: data.examples || '',
+      category_id: data.category_id ?? null
+    })
+  } catch (e) {
+    console.error('加载概念失败', e)
+    toast?.error('加载概念失败')
+    router.push('/concepts')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function saveConcept() {
+  saving.value = true
+  try {
+    const payload = { ...form, extra_categories: extraCategories.value.map(c => c.id) }
+    if (isEdit.value) {
+      await axios.put(`/concept/${route.params.id}`, payload)
+    } else {
+      const { data } = await axios.post('/concept', payload)
+      router.push(`/concept/${data.id}/edit`)
+      return
     }
-  },
-  computed: {
-    isEdit() {
-      return !!this.$route.params.id
-    },
-    availableCategories() {
-      // 过滤掉主分类和已添加的附加分类
-      const mainCategoryId = this.form.category_id
-      const extraCategoryIds = this.extraCategories.map(c => c.id)
-      
-      return this.categories.filter(c => 
-        c.id !== mainCategoryId && !extraCategoryIds.includes(c.id)
-      )
+    toast?.success('保存成功')
+  } catch (e) {
+    console.error('保存失败', e)
+    toast?.error('保存失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+function addExtraCategory() {
+  if (!newExtraCategoryId.value) return
+  const c = categories.value.find(x => x.id == newExtraCategoryId.value)
+  if (c) {
+    extraCategories.value.push(c)
+    newExtraCategoryId.value = ''
+  }
+}
+
+function removeExtraCategory(id) {
+  extraCategories.value = extraCategories.value.filter(c => c.id !== id)
+}
+
+function confirmDelete() {
+  if (!isEdit.value) return
+  if (confirm(`确定删除概念「${form.term || ''}」吗？此操作不可恢复。`)) {
+    deleteConcept()
+  }
+}
+
+async function deleteConcept() {
+  try {
+    await axios.post('/concepts/bulk', { ids: [route.params.id], op: 'delete' })
+    toast?.success('删除成功')
+    router.push('/concepts')
+  } catch (e) {
+    console.error('删除失败', e)
+    toast?.error('删除失败')
+  }
+}
+
+// —— 选图：立即生成本地预览
+function onPickImage(file) {
+  const raw = file?.raw
+  if (!raw) return
+  if (!raw.type?.startsWith('image/')) {
+    toast?.error('请选择图片文件')
+    return
+  }
+  pickedFile.value = raw
+  // 释放旧URL
+  if (pickedPreviewUrl.value) URL.revokeObjectURL(pickedPreviewUrl.value)
+  pickedPreviewUrl.value = URL.createObjectURL(raw)
+}
+
+// —— 上传图片：成功后切到服务器地址（仍保持“立即可见”的体验）
+async function uploadImage() {
+  if (!isEdit.value) {
+    toast?.error('请先保存概念，再上传图片')
+    return
+  }
+  if (!pickedFile.value) return
+  uploading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('image', pickedFile.value)
+    const { data } = await axios.post(`/concept/${route.params.id}/image`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    concept.value = concept.value || {}
+    concept.value.image_path = data.image_path
+    // 一旦后端返回了路径，可以（可选）释放本地URL，让预览指向服务端
+    if (pickedPreviewUrl.value) {
+      URL.revokeObjectURL(pickedPreviewUrl.value)
+      pickedPreviewUrl.value = ''
     }
-  },
-  async mounted() {
-    await this.loadCategories()
-    if (this.isEdit) {
-      await this.loadConcept()
-    }
-  },
-  methods: {
-    async loadConcept() {
-      this.loading = true
-      
-      try {
-        const response = await this.$axios.get(`/concept/${this.$route.params.id}`)
-        this.concept = response.data
-        this.extraCategories = response.data.extra_categories || []
-        
-        // 更新表单数据
-        this.form = {
-          term: this.concept.term || '',
-          plain_def: this.concept.plain_def || '',
-          mechanism: this.concept.mechanism || '',
-          examples: this.concept.examples || '',
-          category_id: this.concept.category_id
-        }
-        
-      } catch (error) {
-        console.error('加载概念详情失败:', error)
-        this.$toast?.error('加载概念详情失败')
-        this.$router.push('/concepts')
-      } finally {
-        this.loading = false
-      }
-    },
-    
-    async loadCategories() {
-      try {
-        const response = await this.$axios.get('/categories/flat')
-        this.categories = response.data.items
-      } catch (error) {
-        console.error('加载分类列表失败:', error)
-      }
-    },
-    
-    async saveConcept() {
-      this.saving = true
-      
-      try {
-        const updateData = {
-          ...this.form,
-          extra_categories: this.extraCategories.map(c => c.id)
-        }
-        
-        if (this.isEdit) {
-          await this.$axios.put(`/concept/${this.$route.params.id}`, updateData)
-        } else {
-          const response = await this.$axios.post('/concept', this.form)
-          this.$router.push(`/concept/${response.data.id}/edit`)
-          return
-        }
-        
-        this.$toast?.success('保存成功')
-        
-      } catch (error) {
-        console.error('保存概念失败:', error)
-        this.$toast?.error('保存概念失败')
-      } finally {
-        this.saving = false
-      }
-    },
-    
-    async uploadImage(event) {
-      const file = event.target.files[0]
-      if (!file) return
-      
-      // 检查文件类型
-      if (!file.type.startsWith('image/')) {
-        this.$toast?.error('请选择图片文件')
-        return
-      }
-      
-      this.uploading = true
-      
-      try {
-        const formData = new FormData()
-        formData.append('image', file)
-        
-        const response = await this.$axios.post(`/concept/${this.$route.params.id}/image`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        })
-        
-        // 更新本地数据
-        this.concept.image_path = response.data.image_path
-        
-        this.$toast?.success('图片上传成功')
-        
-      } catch (error) {
-        console.error('上传图片失败:', error)
-        this.$toast?.error('上传图片失败')
-      } finally {
-        this.uploading = false
-        // 清空文件输入
-        this.$refs.imageInput.value = ''
-      }
-    },
-    
-    addExtraCategory() {
-      if (!this.newExtraCategoryId) return
-      
-      const category = this.categories.find(c => c.id == this.newExtraCategoryId)
-      if (category) {
-        this.extraCategories.push(category)
-        this.newExtraCategoryId = ''
-      }
-    },
-    
-    removeExtraCategory(categoryId) {
-      this.extraCategories = this.extraCategories.filter(c => c.id !== categoryId)
-    },
-    
-    confirmDelete() {
-      if (confirm(`确定删除概念"${this.concept.term}"吗？此操作不可恢复。`)) {
-        this.deleteConcept()
-      }
-    },
-    
-    async deleteConcept() {
-      try {
-        await this.$axios.post('/concepts/bulk', {
-          ids: [this.$route.params.id],
-          op: 'delete'
-        })
-        
-        this.$toast?.success('删除成功')
-        this.$router.push('/concepts')
-        
-      } catch (error) {
-        console.error('删除概念失败:', error)
-        this.$toast?.error('删除概念失败')
-      }
-    }
+    toast?.success('图片上传成功')
+  } catch (e) {
+    console.error('上传失败', e)
+    toast?.error('上传失败')
+  } finally {
+    uploading.value = false
   }
 }
 </script>
 
 <style scoped>
-.card {
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+/* 复用“公司编辑页”的 markdown 风格 */
+.markdown-style {
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+  padding: 2rem 2rem 3rem;
+  line-height: 1.7;
 }
-
-.img-fluid {
-  max-width: 100%;
-  height: auto;
+.markdown-style h3 {
+  font-weight: 600;
+  color: #334155;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
 }
-
-.badge {
-  font-size: 0.875rem;
-}
-
-.form-label {
-  font-weight: 500;
-}
-
-.text-danger {
-  color: #dc3545 !important;
-}
-
-.btn-sm {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
-}
+.container { max-width: 900px; margin: 0 auto; }
 </style>
